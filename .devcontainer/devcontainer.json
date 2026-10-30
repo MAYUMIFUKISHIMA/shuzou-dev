@@ -1,0 +1,1 @@
+{"name":"shuzou-dev","image":"mcr.microsoft.com/devcontainers/javascript-node:24-bookworm","postCreateCommand":"npm ci","forwardPorts":[5173],"customizations":{"vscode":{"extensions":["dbaeumer.vscode-eslint"]}}}
