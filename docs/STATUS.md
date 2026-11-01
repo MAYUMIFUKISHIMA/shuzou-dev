@@ -1,5 +1,25 @@
 # 開発引き継ぎ
 
+## 最新の接続確認（2026-11-01）
+以下が旧記載の「Supabase未設定・未検証」を更新する。実業務データはまだ投入しない。
+
+- 対象は `tdrzvbbxpfpwpubhdxiz` / `https://tdrzvbbxpfpwpubhdxiz.supabase.co`。MCP接続成功。初期SQLは適用済みで再実行していない。
+- 4テーブルのRLS有効、authenticated向けSELECTポリシー4件、関数6件を読み取り確認。5つの公開RPC/判定関数はSECURITY DEFINER・空のsearch_path。validate_payloadには一般公開実行権限なし。入力者・管理者・改訂・24時間復元期限の検査あり。
+- 実効権限: anonはSELECT/INSERT/UPDATE/DELETE不可、authenticatedはSELECTのみ。ただし両ロールにTRUNCATE等の追加権限が残る。本番前に別の差分マイグレーションで追加権限の取り消しを検討・検証する。今回はSQL変更なし。
+- Security Advisor警告5件はauthenticatedによるSECURITY DEFINER実行。RPC用途として意図した構成だが、実ユーザー3人での権限試験は未完了。
+- ローカル`.env.local`に公開URLとpublishable keyを設定（Git対象外）。再現用公開値を`.env.example`へ保存。secret/service_role不使用。ホスティング環境への設定・デプロイは未実施。
+- 実Auth API `GET /auth/v1/settings`: HTTP 200、`disable_signup=false`、`external.email=true`。公開サインアップはまだ有効、メール認証は有効。利用中MCPにはAuth設定変更・ユーザー作成ツールがなく、ブラウザを使わない条件のため無効化は未実施。Auth内部設定やユーザーをSQLで直接書き換えない。
+- 実REST API: 未認証で4テーブルをSELECT（limit=0）し、全てHTTP 401 / コード42501で拒否。行データは取得していない。ログイン・送信・RPC成功を確認したものではない。
+- `node scripts/check-supabase.mjs`で上記の読み取り検証を再現可能。現在はサインアップ有効を検出して終了コード1。ユーザー・セッション・記録を作成しない。
+- auth.usersおよびpublicの4テーブルをCOUNTし全て0件。実データ・テストユーザー投入なし。課金操作・有料リソース作成・プラン変更なし。契約プラン自体の照会機能は利用中MCPにない。
+- Node.js 24.22.1（指定24.19.0とは差異あり）、npm ci成功、npm test 7件成功、公開接続設定入りの型検査/本番ビルド成功。npm audit要約: low 2件、moderate 8件。依存更新は未実施。
+
+### 次回の作業
+1. 管理画面または認証済みManagement APIで公開サインアップを無効化し、メール/パスワードログインを維持。接続チェックスクリプトを再実行する。
+2. 管理者メールはユーザーが後日提供予定。安全な管理操作でユーザーを作成し、UUIDにprofilesのadmin役割を付与。パスワード/秘密鍵はチャット・Gitで受け取らない。
+3. TRUNCATE等の残存権限を整理し、作業員2人と管理者1人の実ログイン/RLS/RPC/再送検証。HTTPS配信先と環境変数設定、実機Android/PWA、バックアップ方針は引き続き未完了。
+4. 初期SQLやプロジェクト作成は繰り返さない。無料プランを維持し、実データ投入は検証完了後に判断する。
+
 ## 現在の段階（2026-10-30）
 帳票未確定の検証版。実装済み:
 - React/TypeScriptのスマホ向け仮フォーム、端末IndexedDB保存、未送信表示、共用端末での破棄確認。
